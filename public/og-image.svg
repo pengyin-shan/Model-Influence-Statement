@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" role="img" aria-label="Model Influence Statement Generator">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#f8f3ea"/>
+      <stop offset="100%" stop-color="#efe3cc"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <circle cx="1000" cy="140" r="170" fill="#0f5c4d" opacity="0.1"/>
+  <circle cx="170" cy="530" r="180" fill="#b45f06" opacity="0.12"/>
+  <rect x="110" y="90" width="980" height="450" rx="34" fill="#fffdf7" stroke="#0f5c4d" stroke-opacity="0.12" stroke-width="3"/>
+  <text x="160" y="205" fill="#0f5c4d" font-family="Georgia, serif" font-size="60" font-weight="700">
+    Model Influence Statement
+  </text>
+  <text x="160" y="275" fill="#0f5c4d" font-family="Georgia, serif" font-size="60" font-weight="700">
+    Generator
+  </text>
+  <text x="160" y="352" fill="#3f4b48" font-family="'Avenir Next', 'Segoe UI', sans-serif" font-size="29">
+    Structured disclosure for LLM-assisted research
+  </text>
+  <text x="160" y="394" fill="#3f4b48" font-family="'Avenir Next', 'Segoe UI', sans-serif" font-size="29">
+    and software workflows
+  </text>
+  <rect x="160" y="438" width="310" height="58" rx="18" fill="#0f5c4d"/>
+  <text x="195" y="476" fill="#fffdf7" font-family="'Avenir Next', 'Segoe UI', sans-serif" font-size="28" font-weight="600">
+    DOCX + Summary Export
+  </text>
+  <rect x="820" y="175" width="170" height="210" rx="22" fill="#f5ecdc" stroke="#0f5c4d" stroke-opacity="0.2" stroke-width="3"/>
+  <path d="M850 226h110M850 270h110M850 314h70" stroke="#0f5c4d" stroke-width="10" stroke-linecap="round"/>
+  <circle cx="936" cy="333" r="28" fill="#b45f06"/>
+  <path d="M936 316v34M919 333h34" stroke="#fffdf7" stroke-width="8" stroke-linecap="round"/>
+  <text x="160" y="532" fill="#7a4e11" font-family="'Avenir Next', 'Segoe UI', sans-serif" font-size="23" font-weight="600">
+    model-influence-statement-generator.netlify.app
+  </text>
+</svg>

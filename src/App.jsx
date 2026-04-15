@@ -229,7 +229,7 @@ function App() {
   }
 
   return (
-    <Box className="page-shell">
+    <Box className="page-shell" component="main">
       <Container maxWidth="lg" sx={{ py: 6 }}>
         <Stack spacing={3}>
           <Box className="hero-panel">
@@ -247,6 +247,9 @@ function App() {
             </Typography>
             <Typography sx={{ maxWidth: 860, mt: 1.5, color: 'text.secondary' }}>
               Reviewers are encouraged to value the transparency reflected in this statement while evaluating the work on its own merits, and not to treat the presence, absence, or level of detail in the disclosure as a standalone signal of research quality.
+            </Typography>
+            <Typography sx={{ maxWidth: 860, mt: 1.5, color: 'text.secondary' }}>
+              The generator is intended for research transparency, software acknowledgment workflows, model influence disclosure, and broader discussion around responsible citation of LLM-assisted creation.
             </Typography>
             <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} sx={{ mt: 3 }}>
               <Button
@@ -280,7 +283,57 @@ function App() {
                 Project Info
               </Button>
             </Stack>
+            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2.5} sx={{ mt: 2 }}>
+              <Link href={githubRepoUrl} target="_blank" rel="noreferrer" underline="hover">
+                Source code on GitHub
+              </Link>
+              <Link href={liveAppUrl} target="_blank" rel="noreferrer" underline="hover">
+                Live deployed app
+              </Link>
+              <Link href={creditRolesUrl} target="_blank" rel="noreferrer" underline="hover">
+                Official CRediT role taxonomy
+              </Link>
+            </Stack>
           </Box>
+
+          <Grid container spacing={3}>
+            <Grid item xs={12} md={4}>
+              <Card className="panel-card">
+                <CardContent>
+                  <Typography variant="h6" gutterBottom>
+                    What It Helps With
+                  </Typography>
+                  <Typography color="text.secondary">
+                    Authors can disclose whether no model, one model, or multiple models were used in a research or software workflow and generate a reusable statement for reporting.
+                  </Typography>
+                </CardContent>
+              </Card>
+            </Grid>
+            <Grid item xs={12} md={4}>
+              <Card className="panel-card">
+                <CardContent>
+                  <Typography variant="h6" gutterBottom>
+                    What It Exports
+                  </Typography>
+                  <Typography color="text.secondary">
+                    The app exports a DOCX influence statement and a shorter one-paragraph acknowledgment summary suitable for software acknowledgments, methods text, or citation-adjacent disclosure.
+                  </Typography>
+                </CardContent>
+              </Card>
+            </Grid>
+            <Grid item xs={12} md={4}>
+              <Card className="panel-card">
+                <CardContent>
+                  <Typography variant="h6" gutterBottom>
+                    What It Covers
+                  </Typography>
+                  <Typography color="text.secondary">
+                    The workflow includes model identification, CRediT-style roles, training-data disclosure, optional prompt disclosure, ethical considerations, and final author certification.
+                  </Typography>
+                </CardContent>
+              </Card>
+            </Grid>
+          </Grid>
 
           <Grid container spacing={3}>
             <Grid item xs={12} md={7}>
@@ -668,22 +721,6 @@ function App() {
               <Typography color="text.secondary">Version: {citationVersion || 'unknown'}</Typography>
               <Typography color="text.secondary">License: {citationLicense || 'unknown'}</Typography>
               <Typography color="text.secondary">Release Date: {citationDate || 'unknown'}</Typography>
-            </Box>
-            <Box>
-              <Typography variant="subtitle2">citation.cff</Typography>
-              <Typography
-                component="pre"
-                color="text.secondary"
-                sx={{
-                  whiteSpace: 'pre-wrap',
-                  wordBreak: 'break-word',
-                  fontFamily: '"SFMono-Regular", Consolas, "Liberation Mono", monospace',
-                  fontSize: '0.82rem',
-                  m: 0
-                }}
-              >
-                {citationCffRaw}
-              </Typography>
             </Box>
           </Stack>
         </DialogContent>

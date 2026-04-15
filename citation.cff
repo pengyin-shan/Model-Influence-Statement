@@ -5,6 +5,10 @@ type: software
 authors:
   - family-names: Shan
     given-names: Pengyin
+  - family-names: Thill
+    given-names: Simon
+repository-code: https://github.com/pengyin-shan/Model-Influence-Statement
+url: https://model-influence-statement-generator.netlify.app/
 license: MIT
 version: 0.1.0
 date-released: 2026-04-15

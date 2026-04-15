@@ -67,12 +67,19 @@ Authors may refer to, but are not limited by, the CRediT taxonomy. Common roles 
 - Conceptualization
 - Data curation
 - Formal analysis
+- Funding acquisition
 - Investigation
 - Methodology
+- Project administration
+- Resources
 - Software
+- Supervision
 - Validation
 - Visualization
-- Writing
+- Writing - original draft
+- Writing - review & editing
+
+Official CRediT role descriptors: https://credit.niso.org/contributor-roles-defined/
 
 Add free-text roles when needed.
 
