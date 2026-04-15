@@ -16,6 +16,7 @@ import {
   FormControlLabel,
   FormLabel,
   Grid,
+  Link,
   Radio,
   RadioGroup,
   Stack,
@@ -24,10 +25,12 @@ import {
 } from '@mui/material'
 import AddIcon from '@mui/icons-material/Add'
 import DownloadIcon from '@mui/icons-material/Download'
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined'
 import RemoveIcon from '@mui/icons-material/Remove'
 import ReplayIcon from '@mui/icons-material/Replay'
 import { emptyModel, exampleForm, roleOptions, trainingOptions } from './content'
-import { buildStatementText, exportStatementDocx } from './docxExport'
+import { buildAcknowledgmentText, buildStatementText, downloadAcknowledgmentText, exportStatementDocx } from './docxExport'
+import citationCffRaw from '../citation.cff?raw'
 
 const initialForm = {
   ...exampleForm,
@@ -35,11 +38,91 @@ const initialForm = {
 }
 const exampleStatementUrl = new URL('../example-model-influence-statement.docx', import.meta.url).href
 const contactEmail = 'pengyins@illinois.edu'
+const creditRolesUrl = 'https://credit.niso.org/contributor-roles-defined/'
+
+const readCffValue = (key) => {
+  const match = citationCffRaw.match(new RegExp(`^${key}:\\s*(.+)$`, 'm'))
+  return match ? match[1].trim() : ''
+}
+
+const readCffAuthors = () => {
+  const lines = citationCffRaw.split('\n')
+  const authors = []
+  let inAuthors = false
+  let currentAuthor = {}
+
+  lines.forEach((line) => {
+    if (!inAuthors) {
+      if (line.trim() === 'authors:') {
+        inAuthors = true
+      }
+      return
+    }
+
+    if (/^\S/.test(line) && line.trim() !== 'authors:') {
+      if (currentAuthor.family || currentAuthor.given) {
+        authors.push(currentAuthor)
+        currentAuthor = {}
+      }
+      inAuthors = false
+      return
+    }
+
+    const trimmed = line.trim()
+
+    if (trimmed.startsWith('- family-names:')) {
+      if (currentAuthor.family || currentAuthor.given) {
+        authors.push(currentAuthor)
+      }
+      currentAuthor = {
+        family: trimmed.replace('- family-names:', '').trim()
+      }
+      return
+    }
+
+    if (trimmed.startsWith('- ')) {
+      if (currentAuthor.family || currentAuthor.given) {
+        authors.push(currentAuthor)
+      }
+      currentAuthor = {}
+      return
+    }
+
+    if (trimmed.startsWith('family-names:')) {
+      currentAuthor.family = trimmed.replace('family-names:', '').trim()
+    }
+
+    if (trimmed.startsWith('given-names:')) {
+      currentAuthor.given = trimmed.replace('given-names:', '').trim()
+    }
+  })
+
+  if (currentAuthor.family || currentAuthor.given) {
+    authors.push(currentAuthor)
+  }
+
+  return authors
+    .map((author) => [author.given, author.family].filter(Boolean).join(' '))
+    .filter(Boolean)
+}
+
+const citationTitle = readCffValue('title')
+const citationVersion = readCffValue('version')
+const citationLicense = readCffValue('license')
+const citationDate = readCffValue('date-released')
+const githubRepoUrl = readCffValue('repository-code')
+const liveAppUrl = readCffValue('url')
+const citationAuthors = readCffAuthors()
+const citationYear = citationDate ? citationDate.slice(0, 4) : ''
+const citationText = `${citationAuthors.length ? citationAuthors.join(', ') : 'Unknown Author'}${citationYear ? ` (${citationYear})` : ''}. ${citationTitle || 'Untitled'}${citationVersion ? ` (Version ${citationVersion})` : ''} [Software]. ${liveAppUrl || githubRepoUrl || ''}`.trim()
 
 function App() {
   const [form, setForm] = useState(initialForm)
   const [isExporting, setIsExporting] = useState(false)
   const [isContactOpen, setIsContactOpen] = useState(false)
+  const [isInfoOpen, setIsInfoOpen] = useState(false)
+  const [isSummaryOpen, setIsSummaryOpen] = useState(false)
+  const [isSummaryCopied, setIsSummaryCopied] = useState(false)
   const [contactForm, setContactForm] = useState({
     name: '',
     email: '',
@@ -49,6 +132,7 @@ function App() {
 
   const visibleModels = form.disclosureScope === 'single' ? form.models.slice(0, 1) : form.models
   const preview = buildStatementText(form)
+  const acknowledgmentSummary = buildAcknowledgmentText(form)
 
   const updateField = (field, value) => {
     setForm((current) => ({ ...current, [field]: value }))
@@ -118,6 +202,32 @@ function App() {
     setIsContactOpen(false)
   }
 
+  const openInfoDialog = () => {
+    setIsInfoOpen(true)
+  }
+
+  const closeInfoDialog = () => {
+    setIsInfoOpen(false)
+  }
+
+  const openSummaryDialog = () => {
+    setIsSummaryCopied(false)
+    setIsSummaryOpen(true)
+  }
+
+  const closeSummaryDialog = () => {
+    setIsSummaryOpen(false)
+  }
+
+  const copySummaryText = async () => {
+    if (!navigator.clipboard?.writeText) {
+      return
+    }
+
+    await navigator.clipboard.writeText(acknowledgmentSummary)
+    setIsSummaryCopied(true)
+  }
+
   return (
     <Box className="page-shell">
       <Container maxWidth="lg" sx={{ py: 6 }}>
@@ -161,6 +271,13 @@ function App() {
                 onClick={openContactDialog}
               >
                 Contact Developer
+              </Button>
+              <Button
+                variant="text"
+                startIcon={<InfoOutlinedIcon />}
+                onClick={openInfoDialog}
+              >
+                Project Info
               </Button>
             </Stack>
           </Box>
@@ -335,6 +452,13 @@ function App() {
 
                         <Stack spacing={2}>
                           <Typography variant="h5">Roles Played by the Model</Typography>
+                          <Typography color="text.secondary">
+                            Official CRediT role descriptors:
+                            {' '}
+                            <Link href={creditRolesUrl} target="_blank" rel="noreferrer">
+                              credit.niso.org/contributor-roles-defined/
+                            </Link>
+                          </Typography>
                           <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
                             {roleOptions.map((role) => (
                               <Chip
@@ -428,16 +552,24 @@ function App() {
               <Stack spacing={3}>
                 <Card className="panel-card preview-card">
                   <CardContent>
-                    <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
+                    <Stack spacing={2} sx={{ mb: 2 }}>
                       <Typography variant="h5">Statement Preview</Typography>
-                      <Button
-                        variant="contained"
-                        startIcon={<DownloadIcon />}
-                        onClick={handleExport}
-                        disabled={isExporting}
-                      >
-                        {isExporting ? 'Exporting...' : 'Export DOCX'}
-                      </Button>
+                      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5}>
+                        <Button
+                          variant="contained"
+                          startIcon={<DownloadIcon />}
+                          onClick={handleExport}
+                          disabled={isExporting}
+                        >
+                          {isExporting ? 'Exporting...' : 'Export DOCX'}
+                        </Button>
+                        <Button
+                          variant="outlined"
+                          onClick={openSummaryDialog}
+                        >
+                          Export Summary
+                        </Button>
+                      </Stack>
                     </Stack>
                     <Typography component="pre" className="preview-text">
                       {preview}
@@ -496,6 +628,102 @@ function App() {
           </Button>
           <Button variant="contained" color="secondary" href={contactHref}>
             Email Developer
+          </Button>
+        </DialogActions>
+      </Dialog>
+      <Dialog
+        open={isInfoOpen}
+        onClose={closeInfoDialog}
+        fullWidth
+        maxWidth="sm"
+      >
+        <DialogTitle>Project Info</DialogTitle>
+        <DialogContent>
+          <Stack spacing={2} sx={{ pt: 1 }}>
+            <Typography color="text.secondary">
+              Use the links below for the source repository, deployed app, and citation details for this project.
+            </Typography>
+            <Box>
+              <Typography variant="subtitle2">GitHub Repository</Typography>
+              <Typography>
+                <a href={githubRepoUrl} target="_blank" rel="noreferrer">{githubRepoUrl}</a>
+              </Typography>
+            </Box>
+            <Box>
+              <Typography variant="subtitle2">Live Application</Typography>
+              <Typography>
+                <a href={liveAppUrl} target="_blank" rel="noreferrer">{liveAppUrl}</a>
+              </Typography>
+            </Box>
+            <Box>
+              <Typography variant="subtitle2">Citation</Typography>
+              <Typography color="text.secondary">
+                {citationText}
+              </Typography>
+            </Box>
+            <Box>
+              <Typography variant="subtitle2">Citation Metadata</Typography>
+              <Typography color="text.secondary">Authors: {citationAuthors.length ? citationAuthors.join(', ') : 'unknown'}</Typography>
+              <Typography color="text.secondary">Title: {citationTitle || 'unknown'}</Typography>
+              <Typography color="text.secondary">Version: {citationVersion || 'unknown'}</Typography>
+              <Typography color="text.secondary">License: {citationLicense || 'unknown'}</Typography>
+              <Typography color="text.secondary">Release Date: {citationDate || 'unknown'}</Typography>
+            </Box>
+            <Box>
+              <Typography variant="subtitle2">citation.cff</Typography>
+              <Typography
+                component="pre"
+                color="text.secondary"
+                sx={{
+                  whiteSpace: 'pre-wrap',
+                  wordBreak: 'break-word',
+                  fontFamily: '"SFMono-Regular", Consolas, "Liberation Mono", monospace',
+                  fontSize: '0.82rem',
+                  m: 0
+                }}
+              >
+                {citationCffRaw}
+              </Typography>
+            </Box>
+          </Stack>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 3 }}>
+          <Button onClick={closeInfoDialog}>Close</Button>
+          <Button variant="outlined" href={githubRepoUrl} target="_blank" rel="noreferrer">
+            Open GitHub
+          </Button>
+          <Button variant="contained" href={liveAppUrl} target="_blank" rel="noreferrer">
+            Open App
+          </Button>
+        </DialogActions>
+      </Dialog>
+      <Dialog
+        open={isSummaryOpen}
+        onClose={closeSummaryDialog}
+        fullWidth
+        maxWidth="md"
+      >
+        <DialogTitle>Acknowledgment Summary</DialogTitle>
+        <DialogContent>
+          <Stack spacing={2} sx={{ pt: 1 }}>
+            <Typography color="text.secondary">
+              This one-paragraph summary is intended for software acknowledgments, method descriptions, or in-paragraph citation-style disclosure.
+            </Typography>
+            <Typography
+              className="summary-text"
+              color="text.secondary"
+            >
+              {acknowledgmentSummary}
+            </Typography>
+          </Stack>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 3 }}>
+          <Button onClick={closeSummaryDialog}>Close</Button>
+          <Button variant="outlined" onClick={copySummaryText}>
+            {isSummaryCopied ? 'Copied' : 'Copy Text'}
+          </Button>
+          <Button variant="contained" onClick={() => downloadAcknowledgmentText(form)}>
+            Download TXT
           </Button>
         </DialogActions>
       </Dialog>

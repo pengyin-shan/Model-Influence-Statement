@@ -2,12 +2,17 @@ export const roleOptions = [
   'Conceptualization',
   'Data curation',
   'Formal analysis',
+  'Funding acquisition',
   'Investigation',
   'Methodology',
+  'Project administration',
+  'Resources',
   'Software',
+  'Supervision',
   'Validation',
   'Visualization',
-  'Writing'
+  'Writing - original draft',
+  'Writing - review & editing'
 ]
 
 export const trainingOptions = ['yes', 'no', 'unknown']
@@ -47,7 +52,7 @@ export const exampleForm = {
   trainingOpenSource: 'unknown',
   trainingProprietary: 'unknown',
   trainingLicensed: 'unknown',
-  roles: ['Software', 'Validation', 'Visualization', 'Methodology', 'Writing'],
+  roles: ['Software', 'Validation', 'Visualization', 'Methodology', 'Writing - original draft'],
   customRoles: '',
   whatElse: 'The models mentioned above are used to create this web app',
   shareCriticalPrompt: 'no',

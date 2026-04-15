@@ -1,4 +1,10 @@
 const valueOrUnknown = (value) => value && value.trim() ? value.trim() : 'unknown'
+const valueOrEmpty = (value) => value && value.trim() ? value.trim() : ''
+const visibleModelsForForm = (form) => form.usedModel === 'yes'
+  ? form.models.slice(0, form.disclosureScope === 'single' ? 1 : form.models.length)
+  : []
+const disclosedRolesForForm = (form) => [...form.roles, ...form.customRoles.split(',').map((item) => item.trim()).filter(Boolean)]
+const buildSafeName = (title) => (title || 'model-influence-statement').trim().replace(/[^a-z0-9]+/gi, '-').replace(/^-+|-+$/g, '').toLowerCase() || 'model-influence-statement'
 
 const labelParagraph = (Paragraph, TextRun, label, value) =>
   new Paragraph({
@@ -50,10 +56,8 @@ const modelTable = (Table, TableCell, TableRow, Paragraph, TextRun, WidthType, m
   })
 
 export const buildStatementText = (form) => {
-  const models = form.usedModel === 'yes'
-    ? form.models.slice(0, form.disclosureScope === 'single' ? 1 : form.models.length)
-    : []
-  const roles = [...form.roles, ...form.customRoles.split(',').map((item) => item.trim()).filter(Boolean)]
+  const models = visibleModelsForForm(form)
+  const roles = disclosedRolesForForm(form)
   const lines = [
     'Model Influence Statement',
     '',
@@ -112,6 +116,45 @@ export const buildStatementText = (form) => {
   return lines.join('\n')
 }
 
+export const buildAcknowledgmentText = (form) => {
+  const workTitle = valueOrEmpty(form.workTitle) || 'this work'
+
+  if (form.usedModel === 'no') {
+    return `The authors of "${workTitle}" report that no machine-learning model was used in the creation of this work.`
+  }
+
+  const models = visibleModelsForForm(form)
+  const roles = disclosedRolesForForm(form)
+  const modelSummary = models.map((model) => {
+    const modelName = valueOrEmpty(model.modelName) || 'an unspecified model'
+    const details = [valueOrEmpty(model.author), valueOrEmpty(model.version) ? `version ${valueOrEmpty(model.version)}` : ''].filter(Boolean)
+    return details.length ? `${modelName} (${details.join(', ')})` : modelName
+  }).join('; ')
+  const taskSummary = models.map((model) => valueOrEmpty(model.task)).filter(Boolean).join('; ')
+  const sentences = [
+    `The authors disclose the use of ${modelSummary || 'an unspecified model'} in the creation of "${workTitle}".`,
+    roles.length ? `Reported CRediT-aligned roles included ${roles.join(', ')}.` : '',
+    taskSummary ? `Disclosed uses included ${taskSummary}.` : '',
+    `The statement reports training exposure as publicly available open-source code (${form.trainingOpenSource}), proprietary code (${form.trainingProprietary}), and data subject to license restrictions (${form.trainingLicensed}).`,
+    valueOrEmpty(form.whatElse) && valueOrUnknown(form.whatElse).toLowerCase() !== 'unknown' ? `Additional disclosed context: ${valueOrEmpty(form.whatElse)}.` : '',
+    form.shareCriticalPrompt === 'yes' ? 'A critical prompt or prompt summary was also voluntarily disclosed.' : '',
+    valueOrEmpty(form.ethics) && valueOrUnknown(form.ethics).toLowerCase() !== 'unknown' ? `Ethical considerations noted: ${valueOrEmpty(form.ethics)}.` : ''
+  ].filter(Boolean)
+
+  return sentences.join(' ')
+}
+
+export const downloadAcknowledgmentText = (form) => {
+  const text = buildAcknowledgmentText(form)
+  const blob = new Blob([text], { type: 'text/plain;charset=utf-8' })
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = `${buildSafeName(form.workTitle)}-acknowledgment.txt`
+  link.click()
+  URL.revokeObjectURL(url)
+}
+
 export const exportStatementDocx = async (form) => {
   const {
     Document,
@@ -124,10 +167,8 @@ export const exportStatementDocx = async (form) => {
     TextRun,
     WidthType
   } = await import('docx')
-  const models = form.usedModel === 'yes'
-    ? form.models.slice(0, form.disclosureScope === 'single' ? 1 : form.models.length)
-    : []
-  const roles = [...form.roles, ...form.customRoles.split(',').map((item) => item.trim()).filter(Boolean)]
+  const models = visibleModelsForForm(form)
+  const roles = disclosedRolesForForm(form)
   const children = [
     new Paragraph({
       heading: HeadingLevel.TITLE,
@@ -239,7 +280,7 @@ export const exportStatementDocx = async (form) => {
   })
 
   const blob = await Packer.toBlob(doc)
-  const safeName = (form.workTitle || 'model-influence-statement').trim().replace(/[^a-z0-9]+/gi, '-').replace(/^-+|-+$/g, '').toLowerCase() || 'model-influence-statement'
+  const safeName = buildSafeName(form.workTitle)
   const url = URL.createObjectURL(blob)
   const link = document.createElement('a')
   link.href = url
