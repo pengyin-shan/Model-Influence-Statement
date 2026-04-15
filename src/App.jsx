@@ -8,6 +8,10 @@ import {
   Chip,
   Container,
   Divider,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
   FormControl,
   FormControlLabel,
   FormLabel,
@@ -21,35 +25,27 @@ import {
 import AddIcon from '@mui/icons-material/Add'
 import DownloadIcon from '@mui/icons-material/Download'
 import RemoveIcon from '@mui/icons-material/Remove'
-import { emptyModel, roleOptions, trainingOptions } from './content'
+import ReplayIcon from '@mui/icons-material/Replay'
+import { emptyModel, exampleForm, roleOptions, trainingOptions } from './content'
 import { buildStatementText, exportStatementDocx } from './docxExport'
 
-const today = new Date().toISOString().slice(0, 10)
-
 const initialForm = {
-  workTitle: '',
-  authors: '',
-  usedModel: 'yes',
-  disclosureScope: 'single',
-  models: [{ ...emptyModel }],
-  trainingOpenSource: 'unknown',
-  trainingProprietary: 'unknown',
-  trainingLicensed: 'unknown',
-  roles: ['Software', 'Validation', 'Visualization', 'Methodology'],
-  customRoles: '',
-  whatElse: '',
-  shareCriticalPrompt: 'no',
-  criticalPrompt: '',
-  ethics: '',
-  noModelSignature: '',
-  noModelDate: today,
-  finalSignature: '',
-  finalDate: today
+  ...exampleForm,
+  models: exampleForm.models.map((model) => ({ ...model }))
 }
+const exampleStatementUrl = new URL('../example-model-influence-statement.docx', import.meta.url).href
+const contactEmail = 'pengyins@illinois.edu'
 
 function App() {
   const [form, setForm] = useState(initialForm)
   const [isExporting, setIsExporting] = useState(false)
+  const [isContactOpen, setIsContactOpen] = useState(false)
+  const [contactForm, setContactForm] = useState({
+    name: '',
+    email: '',
+    subject: 'Model Influence Statement follow-up',
+    message: ''
+  })
 
   const visibleModels = form.disclosureScope === 'single' ? form.models.slice(0, 1) : form.models
   const preview = buildStatementText(form)
@@ -99,6 +95,29 @@ function App() {
     }
   }
 
+  const loadExample = () => {
+    setForm({
+      ...exampleForm,
+      models: exampleForm.models.map((model) => ({ ...model }))
+    })
+  }
+
+  const updateContactField = (field, value) => {
+    setContactForm((current) => ({ ...current, [field]: value }))
+  }
+
+  const contactHref = `mailto:${contactEmail}?subject=${encodeURIComponent(contactForm.subject || 'Model Influence Statement follow-up')}&body=${encodeURIComponent(
+    `Name: ${contactForm.name || ''}\nEmail: ${contactForm.email || ''}\n\n${contactForm.message || ''}`
+  )}`
+
+  const openContactDialog = () => {
+    setIsContactOpen(true)
+  }
+
+  const closeContactDialog = () => {
+    setIsContactOpen(false)
+  }
+
   return (
     <Box className="page-shell">
       <Container maxWidth="lg" sx={{ py: 6 }}>
@@ -119,6 +138,31 @@ function App() {
             <Typography sx={{ maxWidth: 860, mt: 1.5, color: 'text.secondary' }}>
               Reviewers are encouraged to value the transparency reflected in this statement while evaluating the work on its own merits, and not to treat the presence, absence, or level of detail in the disclosure as a standalone signal of research quality.
             </Typography>
+            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} sx={{ mt: 3 }}>
+              <Button
+                variant="contained"
+                startIcon={<DownloadIcon />}
+                href={exampleStatementUrl}
+                target="_blank"
+                rel="noreferrer"
+              >
+                Open Example DOCX
+              </Button>
+              <Button
+                variant="outlined"
+                startIcon={<ReplayIcon />}
+                onClick={loadExample}
+              >
+                Load Example Data
+              </Button>
+              <Button
+                variant="outlined"
+                color="secondary"
+                onClick={openContactDialog}
+              >
+                Contact Developer
+              </Button>
+            </Stack>
           </Box>
 
           <Grid container spacing={3}>
@@ -400,24 +444,61 @@ function App() {
                     </Typography>
                   </CardContent>
                 </Card>
-
-                <Card className="panel-card">
-                  <CardContent>
-                    <Typography variant="h6" gutterBottom>
-                      Included Files
-                    </Typography>
-                    <Stack spacing={1}>
-                      <Typography color="text.secondary">`statement-template.md` for editable statement content</Typography>
-                      <Typography color="text.secondary">`example-influence-statement.md` for a GPT-5.4-based example</Typography>
-                      <Typography color="text.secondary">`citation.cff` for software citation metadata</Typography>
-                    </Stack>
-                  </CardContent>
-                </Card>
               </Stack>
             </Grid>
           </Grid>
         </Stack>
       </Container>
+      <Dialog
+        open={isContactOpen}
+        onClose={closeContactDialog}
+        fullWidth
+        maxWidth="sm"
+      >
+        <DialogTitle>Contact Developer</DialogTitle>
+        <DialogContent>
+          <Stack spacing={2} sx={{ pt: 1 }}>
+            <Typography color="text.secondary">
+              Use this form to open your default email client and send a follow-up message to {contactEmail}. This uses a free `mailto:` workflow only. The app does not store messages or use any backend email service.
+            </Typography>
+            <TextField
+              fullWidth
+              label="Your Name"
+              value={contactForm.name}
+              onChange={(event) => updateContactField('name', event.target.value)}
+            />
+            <TextField
+              fullWidth
+              label="Your Email"
+              value={contactForm.email}
+              onChange={(event) => updateContactField('email', event.target.value)}
+            />
+            <TextField
+              fullWidth
+              label="Subject"
+              value={contactForm.subject}
+              onChange={(event) => updateContactField('subject', event.target.value)}
+            />
+            <TextField
+              fullWidth
+              label="Message"
+              value={contactForm.message}
+              onChange={(event) => updateContactField('message', event.target.value)}
+              multiline
+              minRows={4}
+            />
+          </Stack>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 3 }}>
+          <Button onClick={closeContactDialog}>Close</Button>
+          <Button variant="outlined" href={`mailto:${contactEmail}`}>
+            Quick Email Link
+          </Button>
+          <Button variant="contained" color="secondary" href={contactHref}>
+            Email Developer
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   )
 }
