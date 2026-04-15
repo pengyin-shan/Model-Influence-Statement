@@ -1,0 +1,18 @@
+cff-version: 1.2.0
+title: Model Influence Statement
+message: Please cite this project using the metadata below.
+type: software
+authors:
+  - family-names: Shan
+    given-names: Pengyin
+license: MIT
+version: 0.1.0
+date-released: 2026-04-15
+abstract: >
+  A self-hostable web application for collecting machine-learning model use disclosures,
+  generating model influence statements, and exporting finalized statements as DOCX files.
+keywords:
+  - machine learning disclosure
+  - llm influence statement
+  - research transparency
+  - docx export

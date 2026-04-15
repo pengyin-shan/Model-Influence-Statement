@@ -1,0 +1,425 @@
+import { useState } from 'react'
+import {
+  Alert,
+  Box,
+  Button,
+  Card,
+  CardContent,
+  Chip,
+  Container,
+  Divider,
+  FormControl,
+  FormControlLabel,
+  FormLabel,
+  Grid,
+  Radio,
+  RadioGroup,
+  Stack,
+  TextField,
+  Typography
+} from '@mui/material'
+import AddIcon from '@mui/icons-material/Add'
+import DownloadIcon from '@mui/icons-material/Download'
+import RemoveIcon from '@mui/icons-material/Remove'
+import { emptyModel, roleOptions, trainingOptions } from './content'
+import { buildStatementText, exportStatementDocx } from './docxExport'
+
+const today = new Date().toISOString().slice(0, 10)
+
+const initialForm = {
+  workTitle: '',
+  authors: '',
+  usedModel: 'yes',
+  disclosureScope: 'single',
+  models: [{ ...emptyModel }],
+  trainingOpenSource: 'unknown',
+  trainingProprietary: 'unknown',
+  trainingLicensed: 'unknown',
+  roles: ['Software', 'Validation', 'Visualization', 'Methodology'],
+  customRoles: '',
+  whatElse: '',
+  shareCriticalPrompt: 'no',
+  criticalPrompt: '',
+  ethics: '',
+  noModelSignature: '',
+  noModelDate: today,
+  finalSignature: '',
+  finalDate: today
+}
+
+function App() {
+  const [form, setForm] = useState(initialForm)
+  const [isExporting, setIsExporting] = useState(false)
+
+  const visibleModels = form.disclosureScope === 'single' ? form.models.slice(0, 1) : form.models
+  const preview = buildStatementText(form)
+
+  const updateField = (field, value) => {
+    setForm((current) => ({ ...current, [field]: value }))
+  }
+
+  const updateModel = (index, field, value) => {
+    setForm((current) => ({
+      ...current,
+      models: current.models.map((model, modelIndex) =>
+        modelIndex === index ? { ...model, [field]: value } : model
+      )
+    }))
+  }
+
+  const addModel = () => {
+    setForm((current) => ({
+      ...current,
+      models: [...current.models, { ...emptyModel }]
+    }))
+  }
+
+  const removeModel = (index) => {
+    setForm((current) => ({
+      ...current,
+      models: current.models.filter((_, modelIndex) => modelIndex !== index)
+    }))
+  }
+
+  const toggleRole = (role) => {
+    setForm((current) => ({
+      ...current,
+      roles: current.roles.includes(role)
+        ? current.roles.filter((item) => item !== role)
+        : [...current.roles, role]
+    }))
+  }
+
+  const handleExport = async () => {
+    setIsExporting(true)
+    try {
+      await exportStatementDocx(form)
+    } finally {
+      setIsExporting(false)
+    }
+  }
+
+  return (
+    <Box className="page-shell">
+      <Container maxWidth="lg" sx={{ py: 6 }}>
+        <Stack spacing={3}>
+          <Box className="hero-panel">
+            <Typography variant="overline" sx={{ letterSpacing: 2.2 }}>
+              Self-Hosted Disclosure Workflow
+            </Typography>
+            <Typography variant="h1" sx={{ fontSize: { xs: '2.4rem', md: '4rem' }, mt: 1 }}>
+              Model Influence Statement
+            </Typography>
+            <Typography variant="h6" sx={{ maxWidth: 760, mt: 2, color: 'text.secondary', fontWeight: 500 }}>
+              Capture machine-learning model usage, disclose one model or multiple models, and export a finalized statement as a DOCX file for research authors.
+            </Typography>
+            <Typography sx={{ maxWidth: 860, mt: 2.5, color: 'text.secondary' }}>
+              This disclosure is voluntary. It is designed for authors who want to be transparent about model use in their reports and publications, while contributing to a longer-term culture of reproducible research and responsible model creation.
+            </Typography>
+            <Typography sx={{ maxWidth: 860, mt: 1.5, color: 'text.secondary' }}>
+              Reviewers are encouraged to value the transparency reflected in this statement while evaluating the work on its own merits, and not to treat the presence, absence, or level of detail in the disclosure as a standalone signal of research quality.
+            </Typography>
+          </Box>
+
+          <Grid container spacing={3}>
+            <Grid item xs={12} md={7}>
+              <Stack spacing={3}>
+                <Card className="panel-card">
+                  <CardContent>
+                    <Typography variant="h5" gutterBottom>
+                      Responsibility Statement
+                    </Typography>
+                    <Typography color="text.secondary">
+                      The contents of this publication are solely the responsibility of the listed authors. It is the responsibility of the listed authors to verify that all AI-generated code in this work executes as intended.
+                    </Typography>
+                    <Grid container spacing={2} sx={{ mt: 1 }}>
+                      <Grid item xs={12}>
+                        <TextField
+                          fullWidth
+                          label="Work Title"
+                          value={form.workTitle}
+                          onChange={(event) => updateField('workTitle', event.target.value)}
+                        />
+                      </Grid>
+                      <Grid item xs={12}>
+                        <TextField
+                          fullWidth
+                          label="Authors"
+                          value={form.authors}
+                          onChange={(event) => updateField('authors', event.target.value)}
+                          helperText="Use a comma-separated list."
+                        />
+                      </Grid>
+                    </Grid>
+                  </CardContent>
+                </Card>
+
+                <Card className="panel-card">
+                  <CardContent>
+                    <FormControl>
+                      <FormLabel>Did you use a machine-learning model in the creation of this work?</FormLabel>
+                      <RadioGroup
+                        row
+                        value={form.usedModel}
+                        onChange={(event) => updateField('usedModel', event.target.value)}
+                        sx={{ mt: 1 }}
+                      >
+                        <FormControlLabel value="yes" control={<Radio />} label="Yes" />
+                        <FormControlLabel value="no" control={<Radio />} label="No" />
+                      </RadioGroup>
+                    </FormControl>
+
+                    {form.usedModel === 'no' ? (
+                      <Stack spacing={2} sx={{ mt: 3 }}>
+                        <Alert severity="info">
+                          No machine-learning model was used in the creation of this work.
+                        </Alert>
+                        <TextField
+                          fullWidth
+                          label="Signature"
+                          value={form.noModelSignature}
+                          onChange={(event) => updateField('noModelSignature', event.target.value)}
+                        />
+                        <TextField
+                          fullWidth
+                          label="Date"
+                          type="date"
+                          value={form.noModelDate}
+                          onChange={(event) => updateField('noModelDate', event.target.value)}
+                          InputLabelProps={{ shrink: true }}
+                        />
+                      </Stack>
+                    ) : (
+                      <Stack spacing={3} sx={{ mt: 3 }}>
+                        <FormControl>
+                          <FormLabel>Model disclosure scope</FormLabel>
+                          <RadioGroup
+                            row
+                            value={form.disclosureScope}
+                            onChange={(event) => updateField('disclosureScope', event.target.value)}
+                            sx={{ mt: 1 }}
+                          >
+                            <FormControlLabel value="single" control={<Radio />} label="One model" />
+                            <FormControlLabel value="multiple" control={<Radio />} label="Multiple models" />
+                          </RadioGroup>
+                        </FormControl>
+
+                        {visibleModels.map((model, index) => (
+                          <Card key={index} variant="outlined" className="nested-card">
+                            <CardContent>
+                              <Stack spacing={2}>
+                                <Stack direction="row" justifyContent="space-between" alignItems="center">
+                                  <Typography variant="h6">
+                                    Model Entry {index + 1}
+                                  </Typography>
+                                  {form.disclosureScope === 'multiple' && form.models.length > 1 ? (
+                                    <Button
+                                      color="secondary"
+                                      startIcon={<RemoveIcon />}
+                                      onClick={() => removeModel(index)}
+                                    >
+                                      Remove
+                                    </Button>
+                                  ) : null}
+                                </Stack>
+                                <Grid container spacing={2}>
+                                  {[
+                                    ['modelName', 'Model Name'],
+                                    ['author', 'Author or Organization'],
+                                    ['version', 'Version'],
+                                    ['descriptionLink', 'Description or Training-Data Link'],
+                                    ['license', 'Model License'],
+                                    ['task', 'Task Performed in This Work'],
+                                    ['co2Emissions', 'CO2 Emissions'],
+                                    ['paperLink', 'Link to Paper or Documentation'],
+                                    ['baseModel', 'Base Model'],
+                                    ['pid', 'PID']
+                                  ].map(([field, label]) => (
+                                    <Grid item xs={12} sm={field === 'task' || field === 'descriptionLink' ? 12 : 6} key={field}>
+                                      <TextField
+                                        fullWidth
+                                        label={label}
+                                        value={model[field]}
+                                        onChange={(event) => updateModel(index, field, event.target.value)}
+                                        multiline={field === 'task' || field === 'descriptionLink'}
+                                        minRows={field === 'task' || field === 'descriptionLink' ? 2 : 1}
+                                      />
+                                    </Grid>
+                                  ))}
+                                </Grid>
+                              </Stack>
+                            </CardContent>
+                          </Card>
+                        ))}
+
+                        {form.disclosureScope === 'multiple' ? (
+                          <Button variant="outlined" startIcon={<AddIcon />} onClick={addModel}>
+                            Add Another Model
+                          </Button>
+                        ) : null}
+
+                        <Divider />
+
+                        <Stack spacing={2}>
+                          <Typography variant="h5">Training Data Disclosure</Typography>
+                          {[
+                            ['trainingOpenSource', 'Publicly available open-source code'],
+                            ['trainingProprietary', 'Proprietary code'],
+                            ['trainingLicensed', 'Data subject to license restrictions']
+                          ].map(([field, label]) => (
+                            <FormControl key={field}>
+                              <FormLabel>{label}</FormLabel>
+                              <RadioGroup
+                                row
+                                value={form[field]}
+                                onChange={(event) => updateField(field, event.target.value)}
+                              >
+                                {trainingOptions.map((option) => (
+                                  <FormControlLabel
+                                    key={option}
+                                    value={option}
+                                    control={<Radio />}
+                                    label={option}
+                                  />
+                                ))}
+                              </RadioGroup>
+                            </FormControl>
+                          ))}
+                        </Stack>
+
+                        <Divider />
+
+                        <Stack spacing={2}>
+                          <Typography variant="h5">Roles Played by the Model</Typography>
+                          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                            {roleOptions.map((role) => (
+                              <Chip
+                                key={role}
+                                label={role}
+                                color={form.roles.includes(role) ? 'primary' : 'default'}
+                                variant={form.roles.includes(role) ? 'filled' : 'outlined'}
+                                onClick={() => toggleRole(role)}
+                              />
+                            ))}
+                          </Box>
+                          <TextField
+                            fullWidth
+                            label="Custom Roles"
+                            value={form.customRoles}
+                            onChange={(event) => updateField('customRoles', event.target.value)}
+                            helperText="Use commas to separate additional roles."
+                          />
+                        </Stack>
+
+                        <Divider />
+
+                        <Stack spacing={2}>
+                          <Typography variant="h5">Additional Disclosure</Typography>
+                          <TextField
+                            fullWidth
+                            label="What else should readers know?"
+                            value={form.whatElse}
+                            onChange={(event) => updateField('whatElse', event.target.value)}
+                            multiline
+                            minRows={4}
+                          />
+                          <FormControl>
+                            <FormLabel>Do you want to voluntarily disclose a critical prompt or prompt set used in this project?</FormLabel>
+                            <RadioGroup
+                              row
+                              value={form.shareCriticalPrompt}
+                              onChange={(event) => updateField('shareCriticalPrompt', event.target.value)}
+                            >
+                              <FormControlLabel value="yes" control={<Radio />} label="Yes" />
+                              <FormControlLabel value="no" control={<Radio />} label="No" />
+                            </RadioGroup>
+                          </FormControl>
+                          {form.shareCriticalPrompt === 'yes' ? (
+                            <TextField
+                              fullWidth
+                              label="Critical Prompt or Prompt Summary"
+                              value={form.criticalPrompt}
+                              onChange={(event) => updateField('criticalPrompt', event.target.value)}
+                              multiline
+                              minRows={4}
+                            />
+                          ) : null}
+                          <TextField
+                            fullWidth
+                            label="Ethical considerations"
+                            value={form.ethics}
+                            onChange={(event) => updateField('ethics', event.target.value)}
+                            multiline
+                            minRows={4}
+                          />
+                        </Stack>
+
+                        <Divider />
+
+                        <Stack spacing={2}>
+                          <Typography variant="h5">Final Certification</Typography>
+                          <TextField
+                            fullWidth
+                            label="Signature"
+                            value={form.finalSignature}
+                            onChange={(event) => updateField('finalSignature', event.target.value)}
+                          />
+                          <TextField
+                            fullWidth
+                            label="Date"
+                            type="date"
+                            value={form.finalDate}
+                            onChange={(event) => updateField('finalDate', event.target.value)}
+                            InputLabelProps={{ shrink: true }}
+                          />
+                        </Stack>
+                      </Stack>
+                    )}
+                  </CardContent>
+                </Card>
+              </Stack>
+            </Grid>
+
+            <Grid item xs={12} md={5}>
+              <Stack spacing={3}>
+                <Card className="panel-card preview-card">
+                  <CardContent>
+                    <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
+                      <Typography variant="h5">Statement Preview</Typography>
+                      <Button
+                        variant="contained"
+                        startIcon={<DownloadIcon />}
+                        onClick={handleExport}
+                        disabled={isExporting}
+                      >
+                        {isExporting ? 'Exporting...' : 'Export DOCX'}
+                      </Button>
+                    </Stack>
+                    <Typography component="pre" className="preview-text">
+                      {preview}
+                    </Typography>
+                  </CardContent>
+                </Card>
+
+                <Card className="panel-card">
+                  <CardContent>
+                    <Typography variant="h6" gutterBottom>
+                      Included Files
+                    </Typography>
+                    <Stack spacing={1}>
+                      <Typography color="text.secondary">`statement-template.md` for editable statement content</Typography>
+                      <Typography color="text.secondary">`example-influence-statement.md` for a GPT-5.4-based example</Typography>
+                      <Typography color="text.secondary">`citation.cff` for software citation metadata</Typography>
+                    </Stack>
+                  </CardContent>
+                </Card>
+              </Stack>
+            </Grid>
+          </Grid>
+        </Stack>
+      </Container>
+    </Box>
+  )
+}
+
+export default App
