@@ -2,7 +2,8 @@
 
 A self-hostable web application for collecting machine-learning model disclosures, capturing signatures and structured responses, and exporting a finalized model influence statement as a `.docx` file.
 
-Live app: https://model-influence-statement-generator.netlify.app/
+[Open the live app](https://model-influence-statement-generator.netlify.app/)
+
 Source repository: https://github.com/pengyin-shan/Model-Influence-Statement
 
 ## What It Includes
